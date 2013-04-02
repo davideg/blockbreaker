@@ -2,68 +2,94 @@
 <html>
   <head>
     <title>Block Breaker! WOOT!</title>
-    <script type="text/javascript">
-      // requestAnim shim layer
-      //window.requestAnimFrame = (function(callback){
-      //  window.setTimeout(callback, 1000 / 60);});
-      //window.requestAnimFrame = (function(){
-      //  return  window.requestAnimationFrame       || 
-      //          window.webkitRequestAnimationFrame || 
-      //          window.mozRequestAnimationFrame    || 
-      //          window.oRequestAnimationFrame      || 
-      //          window.msRequestAnimationFrame     || 
-      //          function(callback){
-      //            window.setTimeout(callback, 1000 / 60);
-      //          };
-      //});
-    </script>
-    
   </head>
   <body>
     <canvas id="game" width="1000" height="600"></canvas>
     <script type="text/javascript">
-      var gameCanvas = document.getElementById("game");
-      var ctx = gameCanvas.getContext("2d");
-      var colors = ["#FF0000", "#00FF00", "#0000FF"]
-
-      var gap = 5;
       var blockWidth = 80;
       var blockHeight = 40;
+      var backgroundColor = "#FFFFFF"
+      function Block() {
+        this.x = 0;
+        this.y = 0;
+        this.width = blockWidth;
+        this.height = blockHeight;
+        this.color = "#000000";
+      }
+    
+      Block.prototype.render = function() {
+        var gameCanvas = document.getElementById("game");
+        var ctx = gameCanvas.getContext("2d");
+        ctx.fillStyle = this.color;
+        ctx.fillRect(this.x, this.y, this.width, this.height);
+      }
+
+      Block.prototype.clear = function() {
+        var ballColor = this.color;
+        this.color = backgroundColor;
+        this.render();
+        this.color = ballColor;
+      }
+
+      var ballRadius = 10;
+      function Ball() {
+        this.x = 0;
+        this.y = 0;
+        this.radius = ballRadius;
+        this.vx = -0.8;
+        this.vy = -0.8;
+        this.color = "#000000";
+      }
+
+      Ball.prototype.render = function() {
+        var gameCanvas = document.getElementById("game");
+        var ctx = gameCanvas.getContext("2d");
+        ctx.fillStyle = this.color;
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.radius, 0, 2*Math.PI, false);
+        ctx.fill();
+      }
+
+      Ball.prototype.clear = function() {
+        var gameCanvas = document.getElementById("game");
+        var ctx = gameCanvas.getContext("2d");
+        ctx.fillStyle = backgroundColor;
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.radius + 2 /* paint a little more than ball to avoid ugly borders lingering */, 0, 2*Math.PI, false);
+        ctx.fill();
+      }
+
+      var colors = ["#FF0000", "#00FF00", "#0000FF"];
+      var blocks = [];
+
+      var gap = 5;
       var blockColumns = 10;
       var blockRows = 4;
       for(var j=0; j < blockRows; j++) {
-        ctx.fillStyle = colors[j%colors.length];
+        var blockColor = colors[j%colors.length];
         for(var i=0; i < blockColumns; i++) {
-          ctx.fillRect(i * (gap + blockWidth), j * (gap + blockHeight), blockWidth, blockHeight);
+          block = new Block();
+          block.color = blockColor;
+          block.x = i * (gap + blockWidth);
+          block.y = j * (gap + blockHeight);
+          block.render();
+          blocks.push(block);
         }
       }
 
-      var ballOldX = gameCanvas.width / 2;
-      var ballOldY = gameCanvas.height - 50;
-      var ballX = 0;
-      var ballY = 0;
-      var ballRadius = 10;
+      var gameCanvas = document.getElementById("game");
+      var ball = new Ball();
+      ball.x = gameCanvas.width / 2;
+      ball.y = gameCanvas.height - 50;
 
       function nextStep() {
-        console.log("x, y: " + ballX + ", " + ballY);
-        ballX = ballOldX - 1;
-        ballY = ballOldY - 1;
-        var gameCanvas = document.getElementById("game");
-        var ctx = gameCanvas.getContext("2d");
-        ctx.fillStyle = "#FFFFFF";
-        ctx.beginPath();
-        ctx.arc(ballOldX, ballOldY, ballRadius + 2, 0, 2*Math.PI, false);
-        ctx.fill();
-        ctx.fillStyle = "#FF0000";
-        ctx.beginPath();
-        ctx.arc(ballX, ballY, ballRadius, 0, 2*Math.PI, false);
-        ctx.fill();
+        console.log("x, y: " + ball.x + ", " + ball.y);
+        ball.clear();
+        ball.x = ball.x + ball.vx;
+        ball.y = ball.y + ball.vy;
+        ball.render();
 
-        ballOldX = ballX;
-        ballOldY = ballY;
-
-        if(ballX > -ballRadius && ballY > -ballRadius) {
-          //requestAnimFrame(function() {
+        if(ball.x > -ball.radius && ball.y > -ball.radius) {
           requestAnimationFrame(function() {
               nextStep();
           });
