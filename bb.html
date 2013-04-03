@@ -25,10 +25,20 @@
       }
 
       Block.prototype.clear = function() {
-        var ballColor = this.color;
+        var blockColor = this.color;
         this.color = backgroundColor;
         this.render();
-        this.color = ballColor;
+        this.color = blockColor;
+      }
+
+      Block.prototype.isCollision = function(ball) {
+        var ballX = ball.x;
+        var ballY = ball.y;
+        var radius = ball.radius;
+
+        var ballWithinHeight = ((ballY + radius) >= this.y) && ((ballY - radius) <= (this.y + this.height));
+        var ballWithinWidth = ((ballX + radius) >= this.x) && ((ballX - radius) <= (this.x + this.width));
+        return (ballWithinHeight && ballWithinWidth);
       }
 
       var ballRadius = 10;
@@ -36,8 +46,8 @@
         this.x = 0;
         this.y = 0;
         this.radius = ballRadius;
-        this.vx = -0.8;
-        this.vy = -0.8;
+        this.vx = -1.5;
+        this.vy = -1.5;
         this.color = "#000000";
       }
 
@@ -88,6 +98,15 @@
         ball.x = ball.x + ball.vx;
         ball.y = ball.y + ball.vy;
         ball.render();
+
+        for(var i = blocks.length - 1; i >=0; i--) {
+          if(blocks[i].isCollision(ball)) {
+            ball.vx = ball.vx;
+            ball.vy = -ball.vy;
+            blocks[i].clear();
+            break;
+          }
+        }
 
         if(ball.x > -ball.radius && ball.y > -ball.radius) {
           requestAnimationFrame(function() {
