@@ -46,8 +46,8 @@
         this.x = 0;
         this.y = 0;
         this.radius = ballRadius;
-        this.vx = -1.5;
-        this.vy = -1.5;
+        this.vx = -3.5;
+        this.vy = -3.5;
         this.color = "#000000";
       }
 
@@ -65,8 +65,59 @@
         var ctx = gameCanvas.getContext("2d");
         ctx.fillStyle = backgroundColor;
         ctx.beginPath();
-        ctx.arc(this.x, this.y, this.radius + 2 /* paint a little more than ball to avoid ugly borders lingering */, 0, 2*Math.PI, false);
+        ctx.arc(this.x, this.y, this.radius + 2 /* paint a little more than ball radius to avoid ugly borders lingering */, 0, 2*Math.PI, false);
         ctx.fill();
+      }
+
+      Ball.prototype.checkBoundaryCollision = function(canvas) {
+        var isCollision = false;
+        var ballX = this.x;
+        var ballY = this.y;
+        var radius = this.radius;
+        var ballHitCeiling = (ballY - radius) <= 0;
+        var ballHitLeftWall = (ballX - radius) <= 0;
+        var ballHitRightWall = (ballX + radius) >= canvas.width;
+        if(ballHitCeiling) {
+          isCollision = true;
+          this.vy = -this.vy;
+        }
+        if(ballHitLeftWall || ballHitRightWall) {
+          isCollision = true;
+          this.vx = -this.vx;
+        }
+        return isCollision;
+      }
+
+      Ball.prototype.checkFloorCollision = function(canvas) {
+        var isCollision = false;
+        var ballX = this.x;
+        var ballY = this.y;
+        var radius = this.radius;
+        var ballHitFloor = (ballY + radius) >= canvas.height;
+        if(ballHitFloor) {
+          isCollision = true;
+          this.vy = -this.vy;
+        }
+      }
+
+      Ball.prototype.checkBlockCollision = function(block) {
+        var isCollision = false;
+        var ballX = this.x;
+        var ballY = this.y;
+        var radius = this.radius;
+
+        var ballWithinHeight = ((ballY + radius) >= block.y) && ((ballY - radius) <= (block.y + block.height));
+        var ballWithinWidth = ((ballX + radius) >= block.x) && ((ballX - radius) <= (block.x + block.width));
+        if(ballWithinHeight && ballWithinWidth) {
+          isCollision = true;
+          if(ballWithinHeight) {
+            this.vy = -this.vy;
+          }
+          if(ballWithinWidth) {
+            //this.vx = -this.vx;
+          }
+        }
+        return isCollision;
       }
 
       var colors = ["#FF0000", "#00FF00", "#0000FF"];
@@ -93,22 +144,27 @@
       ball.y = gameCanvas.height - 50;
 
       function nextStep() {
-        console.log("x, y: " + ball.x + ", " + ball.y);
+        //console.log("x, y: " + ball.x + ", " + ball.y);
         ball.clear();
         ball.x = ball.x + ball.vx;
         ball.y = ball.y + ball.vy;
         ball.render();
 
+        toRemove = [];
         for(var i = blocks.length - 1; i >=0; i--) {
-          if(blocks[i].isCollision(ball)) {
-            ball.vx = ball.vx;
-            ball.vy = -ball.vy;
+          if(ball.checkBlockCollision(blocks[i])) {
             blocks[i].clear();
+            toRemove.push(i);
             break;
           }
         }
+        for(var i = 0; i < toRemove.length; i++) {
+          blocks.splice(toRemove[i], 1);
+        }
+        ball.checkBoundaryCollision(gameCanvas);
+        ball.checkFloorCollision(gameCanvas);
 
-        if(ball.x > -ball.radius && ball.y > -ball.radius) {
+        if(ball.y <= gameCanvas.height) {
           requestAnimationFrame(function() {
               nextStep();
           });
